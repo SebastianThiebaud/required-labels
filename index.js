@@ -13,11 +13,13 @@ module.exports = app => {
   async function check (context) {
     const timeStart = new Date()
 
+    const skipLabels = ['skip-changelog']
     const versionLabels = ['major', 'minor', 'patch']
     const categoryLabels = ['feature', 'bugfix', 'maintenance', 'security', 'deprecated', 'removed']
 
     const labels = context.payload.pull_request.labels.map(label => label.name)
     
+    const skipLabelsCount = labels.filter(label => skipLabels.includes(label)).length
     const versionLabelsCount = labels.filter(label => versionLabels.includes(label)).length
     const categoryLabelsCount = labels.filter(label => categoryLabels.includes(label)).length
 
@@ -37,7 +39,10 @@ module.exports = app => {
 
     var title = 'This pull request is properly labeled.'
 
-    if (warnings.length > 0) {
+    if (skipLabelsCount > 0) {
+      title = 'Check is ignored for this pull request.'
+      warnings = [] 
+    } else if (warnings.length > 0) {
       title = warnings.join(' ')
     }
 

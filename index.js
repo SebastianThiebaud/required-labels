@@ -13,21 +13,35 @@ module.exports = app => {
   async function check (context) {
     const timeStart = new Date()
 
-    // const versionLabels = ['version:major', 'version:minor', 'version:patch']
-    // const categoryLabels = ['category:feature', 'category:bugfix', 'category:maintenance', 'category:security', 'category:deprecated', 'category:removed']
+    const versionLabels = ['major', 'minor', 'patch']
+    const categoryLabels = ['feature', 'bugfix', 'maintenance', 'security', 'deprecated', 'removed']
 
-    app.log(context.payload)
-    // const conclusion = is_a_verb ? 'success' : 'failure'
+    const labels = context.payload.pull_request.labels.map(label => label.name)
+    
+    const versionLabelsCount = labels.filter(label => versionLabels.includes(label)).length
+    const categoryLabelsCount = labels.filter(label => categoryLabels.includes(label)).length
 
-    // var title = ""
+    var warnings = []
 
-    // if (is_a_verb) {
-    //   title = "Pull request title is valid"
-    // } else {
-    //   title = 'Use the imperative mood in the pull request title'
-    // }
-    const conclusion = 'success'
-    const title = 'OK'
+    if (versionLabelsCount == 0) {
+      warnings.push('Missing version label.')
+    } else if (versionLabelsCount > 1) {
+      warnings.push('More than one version label detected.')
+    }
+
+    if (categoryLabelsCount == 0) {
+      warnings.push('Missing category label.')
+    } else if (categoryLabelsCount > 1) {
+      warnings.push('More than one category label detected.')
+    }
+
+    var title = 'This pull request is properly labeled.'
+
+    if (warnings.length > 0) {
+      title = warnings.join(' ')
+    }
+
+    const conclusion = warnings.length == 0 ? 'success' : 'failure'
 
     return context.github.checks.create(context.repo({
       name: 'Label Checker',
@@ -44,5 +58,3 @@ module.exports = app => {
     }))
   }
 }
-
-function arrayContains(needle, arrhaystack) { return (arrhaystack.indexOf(needle) > -1); }
